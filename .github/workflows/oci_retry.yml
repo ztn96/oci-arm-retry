@@ -60,21 +60,33 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: timeout 19800 python oci_retry.py
 
+
       - name: Auto-disable workflow on success
         if: steps.run_script.outcome == 'success'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          curl -s -X PUT \
-            -H "Authorization: token ${{ secrets.GH_PAT }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/oci_retry.yml/disable
-          echo "Workflow auto-disabled"
+          set -e
+          curl --fail-with-body --show-error --silent \
+            -X PUT \
+            -H "Authorization: Bearer $GH_PAT" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/oci_retry.yml/disable"
+          echo "Workflow disabled successfully"
 
       - name: Trigger next Job (seamless relay)
-        if: steps.run_script.outcome != 'success'
+        if: steps.run_script.outcome == 'failure' && steps.run_script.conclusion != 'cancelled'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          curl -s -X POST \
-            -H "Authorization: token ${{ secrets.GH_PAT }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/oci_retry.yml/dispatches \
+          set -e
+          curl --fail-with-body --show-error --silent \
+            -X POST \
+            -H "Authorization: Bearer $GH_PAT" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/oci_retry.yml/dispatches" \
             -d '{"ref":"main"}'
-          echo "Next Job triggered"
+          echo "Next workflow run dispatched successfully"
+
