@@ -66,7 +66,7 @@ def create_vcn_and_subnet():
             oci.core.models.CreateVcnDetails(
                 compartment_id=COMPARTMENT_ID,
                 display_name="retry-vcn",
-                cidr_block="10.0.0.0/16",
+                cidr_block="10.1.0.0/16",
             )
         ).data
         print(f"Created VCN: {vcn.id}")
@@ -148,7 +148,7 @@ def create_vcn_and_subnet():
                 compartment_id=COMPARTMENT_ID,
                 vcn_id=vcn.id,
                 display_name="retry-subnet",
-                cidr_block="10.0.0.0/24",
+                cidr_block="10.1.0.0/24",
                 prohibit_public_ip_on_vnic=False,
             )
         ).data
