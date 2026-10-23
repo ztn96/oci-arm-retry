@@ -99,6 +99,21 @@ def create_vcn_and_subnet():
         if security_lists:
             existing_egress = security_lists[0].egress_security_rules
             new_ingress = []
+
+            # SSH: only allow your current public IP
+            new_ingress.append(
+                oci.core.models.IngressSecurityRule(
+                    protocol="6",
+                    source="219.104.138.102/32",
+                    tcp_options=oci.core.models.TcpOptions(
+                        destination_port_range=oci.core.models.PortRange(
+                            min=22, max=22
+                        )
+                    ),
+                )
+            )
+
+            # HTTP and HTTPS: allow public website access
             for port in [80, 443]:
                 new_ingress.append(
                     oci.core.models.IngressSecurityRule(
@@ -111,6 +126,7 @@ def create_vcn_and_subnet():
                         ),
                     )
                 )
+
             network.update_security_list(
                 security_lists[0].id,
                 oci.core.models.UpdateSecurityListDetails(
