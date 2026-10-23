@@ -62,7 +62,7 @@ jobs:
 
 
       - name: Auto-disable workflow on success
-        if: false
+        if: steps.run_script.outcome == 'success'
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
@@ -76,7 +76,7 @@ jobs:
           echo "Workflow disabled successfully"
 
       - name: Trigger next Job (seamless relay)
-        if: false
+        if: steps.run_script.outcome == 'failure' && steps.run_script.conclusion != 'cancelled'
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
