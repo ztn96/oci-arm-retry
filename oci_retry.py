@@ -53,11 +53,15 @@ def get_ubuntu_arm_image():
     return images[0].id
 
 
+
 def create_vcn_and_subnet():
     network = oci.core.VirtualNetworkClient(config)
 
-    # Check if VCN already exists
-    vcns = network.list_vcns(COMPARTMENT_ID, display_name="retry-vcn").data
+    # Find or create our dedicated VCN
+    vcns = network.list_vcns(
+        COMPARTMENT_ID, display_name="retry-vcn"
+    ).data
+
     if vcns:
         vcn = vcns[0]
         print(f"Using existing VCN: {vcn.id}")
@@ -71,7 +75,21 @@ def create_vcn_and_subnet():
         ).data
         print(f"Created VCN: {vcn.id}")
 
-        # Create Internet Gateway
+    # Find or create the Internet Gateway inside this VCN
+    gateways = network.list_internet_gateways(
+        COMPARTMENT_ID, vcn_id=vcn.id
+    ).data
+
+    if gateways:
+        ig = next(
+            (gateway for gateway in gateways
+             if gateway.display_name == "retry-ig"),
+            None,
+        )
+    else:
+        ig = None
+
+    if ig is None:
         ig = network.create_internet_gateway(
             oci.core.models.CreateInternetGatewayDetails(
                 compartment_id=COMPARTMENT_ID,
@@ -80,65 +98,95 @@ def create_vcn_and_subnet():
                 is_enabled=True,
             )
         ).data
-
-        # Update route table to allow outbound traffic
-        network.update_route_table(
-            vcn.default_route_table_id,
-            oci.core.models.UpdateRouteTableDetails(
-                route_rules=[
-                    oci.core.models.RouteRule(
-                        destination="0.0.0.0/0",
-                        network_entity_id=ig.id,
-                    )
-                ]
+        print(f"Created Internet Gateway: {ig.id}")
+    elif not ig.is_enabled:
+        ig = network.update_internet_gateway(
+            ig.id,
+            oci.core.models.UpdateInternetGatewayDetails(
+                is_enabled=True
             ),
+        ).data
+
+    # Ensure the default route points to our Internet Gateway
+    route_table = network.get_route_table(
+        vcn.default_route_table_id
+    ).data
+
+    route_rules = [
+        rule for rule in route_table.route_rules
+        if rule.destination != "0.0.0.0/0"
+    ]
+    route_rules.append(
+        oci.core.models.RouteRule(
+            destination="0.0.0.0/0",
+            network_entity_id=ig.id,
+        )
+    )
+
+    network.update_route_table(
+        route_table.id,
+        oci.core.models.UpdateRouteTableDetails(
+            route_rules=route_rules
+        ),
+    )
+
+    # Configure ingress rules only on this VCN's security list
+    security_lists = network.list_security_lists(
+        COMPARTMENT_ID, vcn_id=vcn.id
+    ).data
+
+    if not security_lists:
+        raise RuntimeError(
+            "No security list found for retry-vcn; stopping safely."
         )
 
-        # Open inbound ports: SSH / HTTP / HTTPS / Streamlit
-        security_lists = network.list_security_lists(COMPARTMENT_ID, vcn_id=vcn.id).data
-        if security_lists:
-            existing_egress = security_lists[0].egress_security_rules
-            new_ingress = []
+    security_list = next(
+        (item for item in security_lists
+         if item.display_name == "Default Security List for retry-vcn"),
+        security_lists[0],
+    )
 
-            # SSH: only allow your current public IP
-            new_ingress.append(
-                oci.core.models.IngressSecurityRule(
-                    protocol="6",
-                    source="219.104.138.102/32",
-                    tcp_options=oci.core.models.TcpOptions(
-                        destination_port_range=oci.core.models.PortRange(
-                            min=22, max=22
-                        )
-                    ),
+    existing_egress = security_list.egress_security_rules
+    new_ingress = [
+        oci.core.models.IngressSecurityRule(
+            protocol="6",
+            source="219.104.138.102/32",
+            tcp_options=oci.core.models.TcpOptions(
+                destination_port_range=oci.core.models.PortRange(
+                    min=22, max=22
                 )
-            )
+            ),
+        )
+    ]
 
-            # HTTP and HTTPS: allow public website access
-            for port in [80, 443]:
-                new_ingress.append(
-                    oci.core.models.IngressSecurityRule(
-                        protocol="6",
-                        source="0.0.0.0/0",
-                        tcp_options=oci.core.models.TcpOptions(
-                            destination_port_range=oci.core.models.PortRange(
-                                min=port, max=port
-                            )
-                        ),
+    for port in [80, 443]:
+        new_ingress.append(
+            oci.core.models.IngressSecurityRule(
+                protocol="6",
+                source="0.0.0.0/0",
+                tcp_options=oci.core.models.TcpOptions(
+                    destination_port_range=oci.core.models.PortRange(
+                        min=port, max=port
                     )
-                )
-
-            network.update_security_list(
-                security_lists[0].id,
-                oci.core.models.UpdateSecurityListDetails(
-                    ingress_security_rules=new_ingress,
-                    egress_security_rules=existing_egress,
                 ),
             )
+        )
 
-    # Check if subnet already exists
+    network.update_security_list(
+        security_list.id,
+        oci.core.models.UpdateSecurityListDetails(
+            ingress_security_rules=new_ingress,
+            egress_security_rules=existing_egress,
+        ),
+    )
+
+    # Find or create the subnet
     subnets = network.list_subnets(
-        COMPARTMENT_ID, vcn_id=vcn.id, display_name="retry-subnet"
+        COMPARTMENT_ID,
+        vcn_id=vcn.id,
+        display_name="retry-subnet",
     ).data
+
     if subnets:
         subnet = subnets[0]
         print(f"Using existing subnet: {subnet.id}")
@@ -150,12 +198,13 @@ def create_vcn_and_subnet():
                 display_name="retry-subnet",
                 cidr_block="10.1.0.0/24",
                 prohibit_public_ip_on_vnic=False,
+                route_table_id=vcn.default_route_table_id,
+                security_list_ids=[security_list.id],
             )
         ).data
         print(f"Created subnet: {subnet.id}")
 
     return subnet.id
-
 
 def try_create_instance(subnet_id, ad_name, image_id):
     compute = oci.core.ComputeClient(config)
