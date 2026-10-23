@@ -62,7 +62,7 @@ jobs:
 
 
       - name: Auto-disable workflow on success
-        if: steps.run_script.outcome == 'success'
+        if: false
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
