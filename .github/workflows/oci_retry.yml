@@ -76,7 +76,7 @@ jobs:
           echo "Workflow disabled successfully"
 
       - name: Trigger next Job (seamless relay)
-        if: steps.run_script.outcome == 'failure' && steps.run_script.conclusion != 'cancelled'
+        if: false
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
