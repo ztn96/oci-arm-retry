@@ -209,12 +209,15 @@ def main():
             print(f"   Check Oracle Cloud Console for the public IP")
             break
         except oci.exceptions.ServiceError as e:
-            if "Out of host capacity" in str(e) or "capacity" in str(e).lower():
-                print(f"❌ Out of capacity, retrying...")
+            if e.status == 429 or e.status >= 500 or "capacity" in str(e).lower():
+                print(f"❌ Capacity or temporary service error: {e.message}")
+                print(f"Waiting {RETRY_INTERVAL} seconds before retrying...")
             else:
-                print(f"❌ API error: {e.message}, retrying...")
+                print(f"❌ Non-retryable OCI API error: {e.message}")
+                raise
         except Exception as e:
-            print(f"⚠️ Network timeout or other error, retrying... ({type(e).__name__})")
+            print(f"❌ Unexpected error: {type(e).__name__}: {e}")
+            raise
 
         time.sleep(RETRY_INTERVAL)
 
