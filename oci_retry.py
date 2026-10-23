@@ -99,7 +99,7 @@ def create_vcn_and_subnet():
         if security_lists:
             existing_egress = security_lists[0].egress_security_rules
             new_ingress = []
-            for port in [22, 80, 443, 8501]:
+            for port in [80, 443]:
                 new_ingress.append(
                     oci.core.models.IngressSecurityRule(
                         protocol="6",
