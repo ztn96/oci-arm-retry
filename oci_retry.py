@@ -12,9 +12,9 @@ import datetime
 
 # ─── Configuration ───────────────────────────────────────
 COMPARTMENT_ID = (
-    "ocid1.tenancy.oc1..aaaaaaaaaqij5zlnm3v5qprvdll3j7nc6o3dk4ykzerugzxe37ckajkpjxpa"  # Replace with your tenancy OCID
+    "ocid1.tenancy.oc1..aaaaaaaazqrcto44krxiol7jlg6ea7b3z7gkczta7zhmrhjibn4pviir2qwa"  # Replace with your tenancy OCID
 )
-SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDdsLT/y7kupelr7rr+NcIyPVb4ZC20x9L5VuNMC5aYlXmSuqJQemXzdzfvp5F899CNdBe+TJJ+w55ka6C5J8vZTMmT4IfIOKZdJsKaTwOCbYTRz62PLcq90veNBPdn0kcnUxrqD3ReKxkKhyyL9WIWH1+4e945w9TL2wgr7Os0rYN5q/4Sa6ioof1I4NE9lGw+WL2yjOI0YLQXmWnvRb7qcQUdOCxgbOXw3GsPFwp3UZ+yJm8kbwFzJdTojaUeriuk3HQYFjzaOVN07kmf2vTQKSgsyw5B+BhyeYQmcRtNTNiriZ7skfS06/24ZM/hzLBz7/PQgw0DoRHDWB5YbyT1 ssh-key-2026-03-05"  # Replace with your SSH public key (.pub file content)
+SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC9gPhOfTvLeC2cVxn3LrQBwXddgYebEYFCzs8qyLHSvLnmzGS4KvN59MEPT1PGeTLKkwyfA8nkRTdZ2w6CgnXBBKxqCdXWp/rXI8gLRypQvS8R4IOi7O9REbP9A8/I56RowZpUxwoFgxc4i4b4c5TXJtILo4iUDfo47MZ960mjNc+bg/D6NBPwmXt5aepGStfWM+fesjCsWGq1gycV3FtLAH1C6RHKT9vDipx/bVFJb633NHoCmyt/Aw8TYcwx8W87afFGyMrqxLYGU6Zm1oODXgDxj7z1HdYg2YtJuBIN3QmH/7hZOdzUQmzetM0OuXb7J1wjmlcHdXof8kdpwWSp4/2Agp5RhJqIeHLhGb7FaCHKi7xbqaeAoQytYWhcZlWHG07m2e4Dzak87QkUcqkytXTR6uq27p+NjMNdSNqoPYj1GwWQzj+VKbxQOLLVvwTv6jVISUiDuUpPzBcCu4Dw7F6nOTTn4QDETZz3rnYOcdVFzY2Fbk+T3osH6U6HM9rNWRsqrq4Nzd0jTiEcKTIU9rengeHFFx1oCYY3Ddxx1kHj8eQWLAAG0WNOtPbOefxxoPCOFdgg3geNpjrUBHzzKNWDtUTAIZmyGAgjMFv0UO76jc1yYCNPoDDdklk4VRz9wBtG9TclL/G1Wex/wrlQc+e8J9936OTwf5YfzrxUbQ== oci-a1-server"  # Replace with your SSH public key (.pub file content)
 INSTANCE_NAME = "streamlit-server"
 ARM_OCPUS = 2
 ARM_MEMORY_IN_GBS = 12
